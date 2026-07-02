@@ -35,6 +35,7 @@ class ThemesRepository
 
     public function activate($id): bool
     {
+        $res = false;
         $list = [];
         $iterator = new FilesystemIterator($this->themesDirPath);
         foreach ($iterator as $item) {
@@ -43,9 +44,12 @@ class ThemesRepository
             }
         }
         if (in_array($id, $list, false)) {
-            return $this->exporter->saveToFile(['themeName' => $id], $this->themeConfigFile);
+            $res = $this->exporter->saveToFile(['themeName' => $id], $this->themeConfigFile);
+            if (function_exists('opcache_invalidate')) {
+                opcache_invalidate($this->themeConfigFile, true);
+            }
         }
-        return false;
+        return $res;
     }
 
     /**
