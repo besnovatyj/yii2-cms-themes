@@ -8,8 +8,8 @@
 namespace Besnovatyj\Themes\controllers\backend;
 
 use Besnovatyj\Themes\repositories\ThemesRepository;
+use Besnovatyj\Themes\theme\ThemePathMapService;
 use common\components\controller\ControllerTrait;
-use common\components\theme\Theme;
 use DomainException;
 use Exception;
 use Yii;
@@ -22,22 +22,25 @@ class ThemeController extends Controller
     use ControllerTrait;
 
     private ThemesRepository $themes;
+    private ThemePathMapService $pathMaps;
 
     public function __construct(
         $id,
         $module,
         ThemesRepository $themes,
+        ThemePathMapService $pathMaps,
         $config = []
     )
     {
         parent::__construct($id, $module, $config);
         $this->themes = $themes;
+        $this->pathMaps = $pathMaps;
     }
 
     public function actionIndex(): string
     {
         try {
-            $pathMap = new Theme()->getPathMap();
+            $pathMap = $this->pathMaps->pathMapFor($this->pathMaps->activeThemeName());
             $viewMap = VarDumper::export($pathMap);
             $themes = $this->themes->getThemes();
             return $this->render('index', [
@@ -63,7 +66,9 @@ class ThemeController extends Controller
     public function actionRenewPathMap(): Response
     {
         try {
-            new Theme()->renewPathMap();
+            // Сбрасываем кэш всех тем и сразу пересобираем активную для немедленной обратной связи.
+            $this->pathMaps->invalidateAll();
+            $this->pathMaps->pathMapFor($this->pathMaps->activeThemeName());
             Yii::$app->session->setFlash('success', 'Карта путей сгенерирована!');
         } catch (DomainException $e) {
             $this->handleDomainException($e);
