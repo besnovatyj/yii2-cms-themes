@@ -9,7 +9,7 @@ namespace Besnovatyj\Themes\controllers\backend;
 
 use Besnovatyj\Themes\repositories\ThemesRepository;
 use Besnovatyj\Themes\theme\ThemePathMapService;
-use common\components\controller\ControllerTrait;
+use Besnovatyj\Kernel\controller\ControllerTrait;
 use DomainException;
 use Exception;
 use Yii;
