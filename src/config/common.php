@@ -25,7 +25,7 @@ use Besnovatyj\Themes\theme\Theme;
  *
  * Связка — здесь, в `common` (mailer живёт в common-слое), а не в каждом модуле-отправителе и не
  * хардкодом в app-скелете. Базовый компонент `mailer` (class/transport) задаёт окружение
- * (`environments/*/common/config/main-local.php`); merge лишь дополняет его ключом `view.theme`.
+ * (`environments/{dev|prod}/common/config/main-local.php`); merge лишь дополняет его ключом `view.theme`.
  */
 return [
     'modules' => [
