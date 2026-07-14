@@ -16,7 +16,8 @@
     "bescms": { "kind": "module" },
     "config-plugin": {
       "admin-menu": "src/config/adminMenu.php",
-      "common": "src/config/common.php"
+      "common": "src/config/common.php",
+      "app-frontend": "src/config/frontend.php"
     }
   },
   "keywords": [
