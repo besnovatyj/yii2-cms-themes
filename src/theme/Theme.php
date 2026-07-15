@@ -10,6 +10,7 @@ namespace Besnovatyj\Themes\theme;
 
 use Besnovatyj\Contracts\theme\LayoutPathProvider;
 use Yii;
+use yii\base\InvalidArgumentException;
 use yii\base\InvalidConfigException;
 use yii\base\Theme as BaseTheme;
 
@@ -55,4 +56,27 @@ class Theme extends BaseTheme implements LayoutPathProvider
     {
         return $this->mapService ??= Yii::createObject(ThemePathMapService::class);
     }
+
+    /**
+     * Метод для получения Url адресов публикуемых ресурсов темы
+     *
+     * Публикуем медиа-папку темы один раз за запрос, URL кэшируется AssetManager'ом.
+     * Подразумевается что в корне темы есть директория 'assets/web', содержащая все публикуемые ресурсы темы
+     * ($this->getPath('assets/web') = @themes/<name>/assets/web — по принятой конвенции.)
+     *
+     * Использование в теме:
+     * `$this->theme->getUrl('favicon/icon.svg')`
+     * путь к конкретному ресурсу задаётся относительно корня опуликованной директории
+     *
+     * @throws InvalidArgumentException|InvalidConfigException
+     */
+    public function getBaseUrl(): ?string
+    {
+        if (parent::getBaseUrl() === null) {
+            [, $baseUrl] = Yii::$app->assetManager->publish($this->getPath('assets/web'));
+            $this->setBaseUrl($baseUrl);
+        }
+        return parent::getBaseUrl();
+    }
+
 }
