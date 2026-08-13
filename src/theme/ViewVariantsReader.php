@@ -16,11 +16,14 @@ use Yii;
  * Ридер каталога вариантов: реализация {@see ViewVariantCatalog} поверх артефакта
  * `viewVariants.{theme}.php`.
  *
- * Намеренно лёгкий: единственная работа на запрос — `require` готового файла активной темы и
- * выборка по ключу-слоту. Никакого обхода ФС и знания о конкретных модулях-потребителях —
- * их дала генерация ({@see ViewVariantsService}). Файл читается один раз за запрос (memo).
- * Отсутствие артефакта (тема без вариантов / ещё не сгенерирован) = пустой каталог, потребитель
- * откатывается к базовому представлению.
+ * Намеренно лёгкий: на happy-path единственная работа на запрос — `require` готового файла активной
+ * темы и выборка по ключу-слоту (memo на запрос). Обхода ФС и знания о модулях-потребителях нет —
+ * их даёт генерация ({@see ViewVariantsService}).
+ *
+ * Self-heal по образцу {@see ThemePathMapService::pathMapFor()}: если артефакта нет (например, его
+ * удалил модуль очистки), ридер генерирует его один раз — так после сброса кэша первый же рендер
+ * страницы или открытие формы в админке всё «чинит» само, без ручного flush/renew. Генерация всегда
+ * оставляет файл (даже пустой), поэтому на теме без вариантов пересканирования на каждом запросе нет.
  *
  * Связывается с интерфейсом через DI в `config/common.php` (секция `container.singletons`),
  * поэтому доступен и на фронте, и в бэкенде без инициализации модуля Themes.
@@ -34,10 +37,12 @@ final class ViewVariantsReader implements ViewVariantCatalog
      * @param string              $artifactBase базовый путь артефакта (алиас); дефолт — единый
      *                                          источник истины {@see ViewVariantsService::ARTIFACT_BASE}
      * @param ThemePathMapService $themes       поставщик имени активной темы
+     * @param ViewVariantsService $variants     генератор для ленивого self-heal при отсутствии файла
      */
     public function __construct(
         private readonly string $artifactBase = ViewVariantsService::ARTIFACT_BASE,
         private readonly ThemePathMapService $themes = new ThemePathMapService(),
+        private readonly ViewVariantsService $variants = new ViewVariantsService(),
     ) {}
 
     public function getVariants(string $slot): array
@@ -51,7 +56,7 @@ final class ViewVariantsReader implements ViewVariantCatalog
     }
 
     /**
-     * Лениво загрузить и запомнить артефакт активной темы.
+     * Лениво загрузить и запомнить артефакт активной темы; при отсутствии — сгенерировать (self-heal).
      *
      * @return array<string, array<string,string>>
      */
@@ -61,11 +66,16 @@ final class ViewVariantsReader implements ViewVariantCatalog
             return $this->map;
         }
 
+        $theme = $this->themes->activeThemeName();
         $base = (string)Yii::getAlias($this->artifactBase);
-        $file = ViewVariantsManifest::themedFile($base, $this->themes->activeThemeName());
+        $file = ViewVariantsManifest::themedFile($base, $theme);
 
-        $data = is_file($file) ? require $file : null;
+        if (is_file($file)) {
+            $data = require $file;
+            return $this->map = is_array($data) ? $data : [];
+        }
 
-        return $this->map = is_array($data) ? $data : [];
+        // Артефакта нет (свежая установка / после очистки) — генерируем один раз, как pathMapFor.
+        return $this->map = $this->variants->rebuild($theme);
     }
 }

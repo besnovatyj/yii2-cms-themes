@@ -60,12 +60,9 @@ final class ViewVariantsService
         $map = $this->scan($themeName);
         $file = $this->artifactFile($themeName);
 
-        if ($map === []) {
-            // Пустую тему не материализуем: ридер трактует отсутствие файла как «вариантов нет».
-            $this->deleteFile($file);
-            return $map;
-        }
-
+        // Пишем всегда, даже пустую мапу: наличие файла = «артефакт сгенерирован». Иначе ленивый
+        // self-heal ридера ({@see ViewVariantsReader}) пересканировал бы тему без вариантов на КАЖДОМ
+        // запросе. Очистка (модуль ClearManager) удаляет файл → следующее чтение сгенерирует заново.
         $this->exporter->saveToFile($map, $file);
         $this->invalidateOpcache($file);
 
