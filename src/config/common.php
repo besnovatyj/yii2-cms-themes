@@ -6,8 +6,10 @@
 
 declare(strict_types=1);
 
+use Besnovatyj\Contracts\theme\ViewVariantCatalog;
 use Besnovatyj\Themes\Module;
 use Besnovatyj\Themes\theme\Theme;
+use Besnovatyj\Themes\theme\ViewVariantsReader;
 
 /**
  * Yii2-конфиг модуля для движка yiisoft/config (группа `common` — общий для всех приложений).
@@ -26,6 +28,13 @@ use Besnovatyj\Themes\theme\Theme;
  * Связка — здесь, в `common` (mailer живёт в common-слое), а не в каждом модуле-отправителе и не
  * хардкодом в app-скелете. Базовый компонент `mailer` (class/transport) задаёт окружение
  * (`environments/{dev|prod}/common/config/main-local.php`); merge лишь дополняет его ключом `view.theme`.
+ *
+ * Дополнительно вкладывает DI-биндинг {@see ViewVariantCatalog} → {@see ViewVariantsReader} в
+ * секцию `container.singletons`. Это глобальная (обе аппликации), но ЛЕНИВАЯ регистрация: singleton
+ * лишь объявлен в app-конфиге и инстанциируется только когда модуль-потребитель реально спрашивает
+ * каталог выбираемых шаблонов. Модуль Themes при этом НЕ инициализируется и его Bootstrap не нужен —
+ * чтение артефакта `viewVariants.{theme}.php` не требует ничего от модуля как модуля. Нет пакета тем —
+ * нет биндинга: потребитель мягко откатывается к базовому представлению.
  */
 return [
     'modules' => [
@@ -34,6 +43,11 @@ return [
             Module::moduleConfig(),
             ['version' => Module::moduleVersion()],
         ),
+    ],
+    'container' => [
+        'singletons' => [
+            ViewVariantCatalog::class => ViewVariantsReader::class,
+        ],
     ],
     'components' => [
         'mailer' => [

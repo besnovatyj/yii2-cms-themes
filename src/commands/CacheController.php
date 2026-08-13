@@ -9,6 +9,7 @@ declare(strict_types=1);
 namespace Besnovatyj\Themes\commands;
 
 use Besnovatyj\Themes\theme\ThemePathMapService;
+use Besnovatyj\Themes\theme\ViewVariantsService;
 use yii\console\Controller;
 use yii\console\ExitCode;
 
@@ -31,18 +32,28 @@ final class CacheController extends Controller
         $id,
         $module,
         private readonly ThemePathMapService $pathMaps,
+        private readonly ViewVariantsService $viewVariants,
         $config = [],
     ) {
         parent::__construct($id, $module, $config);
     }
 
     /**
-     * Сбросить кэш карты представлений (`themePathMap.*.php`) всех тем.
+     * Сбросить кэш карты представлений (`themePathMap.*.php`) всех тем и пересобрать артефакт
+     * выбираемых вариантов (`viewVariants.*.php`).
+     *
+     * pathMap самовосстанавливается по mtime манифеста, поэтому его достаточно инвалидировать. Артефакт
+     * вариантов зависит от файлов самой темы (изменение набора модулей его не трогает), а ридер его не
+     * генерирует — поэтому здесь пересобираем сразу, чтобы добавленный/удалённый `*.variants` подхватился.
      */
     public function actionFlush(): int
     {
         $this->pathMaps->invalidateAll();
         $this->stdout("Theme pathMap cache cleared\n");
+
+        $this->viewVariants->invalidateAll();
+        $this->viewVariants->rebuildAll();
+        $this->stdout("View variants artifact rebuilt\n");
 
         return ExitCode::OK;
     }
