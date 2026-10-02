@@ -6,9 +6,11 @@
 
 declare(strict_types=1);
 
+use Besnovatyj\Contracts\theme\ThemeAreaCatalog;
 use Besnovatyj\Contracts\theme\ViewVariantCatalog;
 use Besnovatyj\Themes\Module;
 use Besnovatyj\Themes\theme\Theme;
+use Besnovatyj\Themes\theme\ThemeAreasReader;
 use Besnovatyj\Themes\theme\ViewVariantsReader;
 
 /**
@@ -35,6 +37,10 @@ use Besnovatyj\Themes\theme\ViewVariantsReader;
  * каталог выбираемых шаблонов. Модуль Themes при этом НЕ инициализируется и его Bootstrap не нужен —
  * чтение артефакта `viewVariants.{theme}.php` не требует ничего от модуля как модуля. Нет пакета тем —
  * нет биндинга: потребитель мягко откатывается к базовому представлению.
+ *
+ * Тем же способом вкладывается {@see ThemeAreaCatalog} → {@see ThemeAreasReader}: список мест активной
+ * темы, которые наполняет модуль блоков. Нет пакета тем — модуль блоков работает со свободными
+ * идентификаторами мест.
  */
 return [
     'modules' => [
@@ -47,6 +53,7 @@ return [
     'container' => [
         'singletons' => [
             ViewVariantCatalog::class => ViewVariantsReader::class,
+            ThemeAreaCatalog::class => ThemeAreasReader::class,
         ],
     ],
     'components' => [
