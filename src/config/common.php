@@ -7,10 +7,12 @@
 declare(strict_types=1);
 
 use Besnovatyj\Contracts\theme\ThemeAreaCatalog;
+use Besnovatyj\Contracts\theme\ThemeBlockTypeCatalog;
 use Besnovatyj\Contracts\theme\ViewVariantCatalog;
 use Besnovatyj\Themes\Module;
 use Besnovatyj\Themes\theme\Theme;
 use Besnovatyj\Themes\theme\ThemeAreasReader;
+use Besnovatyj\Themes\theme\ThemeBlockTypesReader;
 use Besnovatyj\Themes\theme\ViewVariantsReader;
 
 /**
@@ -41,6 +43,9 @@ use Besnovatyj\Themes\theme\ViewVariantsReader;
  * Тем же способом вкладывается {@see ThemeAreaCatalog} → {@see ThemeAreasReader}: список мест активной
  * темы, которые наполняет модуль блоков. Нет пакета тем — модуль блоков работает со свободными
  * идентификаторами мест.
+ *
+ * И так же — {@see ThemeBlockTypeCatalog} → {@see ThemeBlockTypesReader}: типы блоков активной темы.
+ * Нет пакета тем — у модуля блоков остаются встроенные типы и типы модулей.
  */
 return [
     'modules' => [
@@ -53,6 +58,7 @@ return [
         'singletons' => [
             ViewVariantCatalog::class => ViewVariantsReader::class,
             ThemeAreaCatalog::class => ThemeAreasReader::class,
+            ThemeBlockTypeCatalog::class => ThemeBlockTypesReader::class,
         ],
     ],
     'components' => [
