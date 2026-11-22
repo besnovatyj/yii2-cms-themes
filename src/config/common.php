@@ -6,6 +6,7 @@
 
 declare(strict_types=1);
 
+use Besnovatyj\Contracts\theme\EditorStylesProvider;
 use Besnovatyj\Contracts\theme\ThemeAreaCatalog;
 use Besnovatyj\Contracts\theme\ThemeBlockTypeCatalog;
 use Besnovatyj\Contracts\theme\ViewVariantCatalog;
@@ -13,7 +14,11 @@ use Besnovatyj\Themes\Module;
 use Besnovatyj\Themes\theme\Theme;
 use Besnovatyj\Themes\theme\ThemeAreasReader;
 use Besnovatyj\Themes\theme\ThemeBlockTypesReader;
+use Besnovatyj\Themes\theme\ThemeEditorStyles;
+use Besnovatyj\Themes\theme\ThemePathMapService;
 use Besnovatyj\Themes\theme\ViewVariantsReader;
+use yii\di\Container;
+use yii\helpers\Url;
 
 /**
  * Yii2-конфиг модуля для движка yiisoft/config (группа `common` — общий для всех приложений).
@@ -58,6 +63,24 @@ return [
         'singletons' => [
             ViewVariantCatalog::class => ViewVariantsReader::class,
             ThemeAreaCatalog::class => ThemeAreasReader::class,
+            EditorStylesProvider::class => static function (Container $container): ThemeEditorStyles {
+                $themes = $container->get(ThemePathMapService::class);
+
+                return new ThemeEditorStyles(
+                    manifestPath: static fn (): string => Yii::getAlias(
+                        '@themes/' . $themes->activeThemeName() . '/editor/config.php',
+                    ),
+                    resolveSourcePath: static fn (string $path): string => Yii::getAlias($path),
+                    publishDirectory: static function (string $path): string {
+                        [, $url] = Yii::$app->getAssetManager()->publish($path);
+
+                        return Url::to($url, true);
+                    },
+                    warn: static function (string $message): void {
+                        Yii::warning($message, ThemeEditorStyles::class);
+                    },
+                );
+            },
             ThemeBlockTypeCatalog::class => ThemeBlockTypesReader::class,
         ],
     ],
